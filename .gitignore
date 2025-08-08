@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Distribution / packaging
+dist/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Virtual Environment
+venv/
+
+# MacOS Directory Files.
+.DS_Store
+
