@@ -156,7 +156,6 @@ echo "Creating DMG image..."
 # Create the DMG
 hdiutil create -srcfolder "$DMG_TEMP" \
     -format UDZO \
-    -compression 9 \
     -volname "$APP_NAME Installer" \
     -size ${SIZE_KB}k \
     "$DMG_PATH"
