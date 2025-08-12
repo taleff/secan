@@ -59,6 +59,8 @@ chmod +x dist/secan.app/Contents/MacOS/secan
 
 # Sign all .dylib files individually
 find dist/secan.app/Contents/MacOS -name "*.dylib" -exec codesign --force --sign - {} \; 2>/dev/null || true
+# Sign all .zip files individually
+find dist/secan.app/Contents/MacOS -name "*.zip" -exec codesign --force --sign - {} \; 2>/dev/null || true
 # Sign all .so files individually  
 find dist/secan.app/Contents/MacOS -name "*.so" -exec codesign --force --sign - {} \; 2>/dev/null || true
 # Sign any Python extension modules
@@ -67,7 +69,7 @@ find dist/secan.app/Contents/MacOS -name "*.cpython-*.so" -exec codesign --force
 find dist/secan.app/Contents/MacOS/_internal -type f -perm +111 -exec codesign --force --sign - {} \; 2>/dev/null || true
 
 # Self-sign the app with ad-hoc signature
-codesign --force --deep --sign - dist/secan.app
+codesign --force --sign - dist/secan.app
 codesign --verify --verbose=2 dist/secan.app
 
 # Remove quarantine attribute that might be added during build
