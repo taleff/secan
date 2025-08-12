@@ -67,7 +67,7 @@ find dist/secan.app/Contents/MacOS -name "*.cpython-*.so" -exec codesign --force
 find dist/secan.app/Contents/MacOS/_internal -type f -perm +111 -exec codesign --force --sign - {} \; 2>/dev/null || true
 
 # Self-sign the app with ad-hoc signature
-codesign --force --sign - dist/secan.app
+codesign --force --deep --sign - dist/secan.app
 codesign --verify --verbose=2 dist/secan.app
 
 # Remove quarantine attribute that might be added during build
