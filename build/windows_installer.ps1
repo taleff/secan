@@ -91,3 +91,4 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Error "Failed to create Windows installer"
     exit 1
+}

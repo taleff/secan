@@ -36,6 +36,18 @@ jobs:
       run: |
         chmod +x build/windows_installer.ps1
         powershell -ExecutionPolicy Bypass -File build/windows_installer.ps1
+
+    - name: Create MacOS DMG
+      if: matrix.os == 'macos-latest'
+      run: |
+        chmod +x build/macos_installer.sh
+        bash build/macos_installer.sh
+
+    - name: Create Linux AppImage
+      if: matrix.os == 'linux-latest'
+      run: |
+        chmod +x build/linux_installer.sh
+        bash build/linux_installer.sh
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
