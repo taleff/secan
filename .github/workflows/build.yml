@@ -42,12 +42,6 @@ jobs:
       run: |
         chmod +x build/macos_installer.sh
         bash build/macos_installer.sh
-
-    - name: Create Linux AppImage
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        chmod +x build/linux_installer.sh
-        bash build/linux_installer.sh
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -68,10 +62,3 @@ jobs:
       with:
         name: secan-installer
         path: secan-installer.dmg
-    
-    - name: Upload Linux AppImage
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: secan
-        path: "*.AppImage"
