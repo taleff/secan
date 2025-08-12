@@ -71,7 +71,7 @@ sign_file() {
     if codesign --force --sign - "$file" 2>/dev/null; then
         return 0
     else
-        print_warning "Failed to sign: $(basename "$file")"
+        echo "Failed to sign: $(basename "$file")"
         return 1
     fi
 }
@@ -97,11 +97,11 @@ xattr -cr "$APP_BUNDLE" 2>/dev/null || true
 
 # Sign the main app bundle with less strict options
 if codesign --force --sign - --options runtime --entitlements /dev/null "$APP_BUNDLE" 2>/dev/null; then
-    print_success "Main application bundle signed successfully"
+    echo "Main application bundle signed successfully"
 elif codesign --force --sign - "$APP_BUNDLE" 2>/dev/null; then
-    print_success "Main application bundle signed (without hardened runtime)"
+    echo "Main application bundle signed (without hardened runtime)"
 else
-    print_warning "Main bundle signing failed, trying alternative approach..."
+    echo "Main bundle signing failed, trying alternative approach..."
     # Try signing without the problematic subdirectories
     if [ -d "$APP_BUNDLE/Contents/MacOS/_internal" ]; then
         # Move problematic files temporarily and sign
@@ -110,31 +110,31 @@ else
         
         # Try signing without the _internal directory
         if codesign --force --sign - "$APP_BUNDLE" 2>/dev/null; then
-            print_success "App bundle signed without _internal directory"
+            echo "App bundle signed without _internal directory"
             # Move the files back
             mv "$TEMP_INTERNAL" "$APP_BUNDLE/Contents/MacOS/_internal" 2>/dev/null || true
         else
             # Move files back and continue anyway
             mv "$TEMP_INTERNAL" "$APP_BUNDLE/Contents/MacOS/_internal" 2>/dev/null || true
-            print_warning "Code signing had issues, but continuing with DMG creation..."
+            echo "Code signing had issues, but continuing with DMG creation..."
         fi
     else
-        print_warning "Code signing had issues, but continuing with DMG creation..."
+        echo "Code signing had issues, but continuing with DMG creation..."
     fi
 fi
 
 # Report signing summary
 if [ $SIGN_ERRORS -gt 0 ]; then
-    print_warning "Encountered $SIGN_ERRORS signing errors, but app should still be functional"
+    echo "Encountered $SIGN_ERRORS signing errors, but app should still be functional"
 else
-    print_success "All components signed successfully"
+    echo "All components signed successfully"
 fi
 
 # Verify the signature (but don't fail if verification fails)
 if codesign --verify "$APP_BUNDLE" 2>/dev/null; then
-    print_success "Code signature verification passed"
+    echo "Code signature verification passed"
 else
-    print_warning "Code signature verification had issues, but the app may still work"
+    echo "Code signature verification had issues, but the app may still work"
 fi
 
 # Create DMG staging directory
