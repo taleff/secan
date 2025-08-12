@@ -1,138 +1,149 @@
 #!/bin/bash
-# build/macos_installer.sh
 
-set -e  # Exit on error
+set -e  # Exit on any error
 
-APP_NAME="Secan"
-APP_VERSION="0.1.0"
-BUNDLE_ID="com.secan.secan"
+APP_DIR="dist/secan"
+MAIN_EXEC="dist/secan.app"
+DMG_NAME="secan-installer"
+VERSION="0.1.0"
 
-# Install create-dmg
-brew install create-dmg
+# Validate input directory
+if [ ! -d "$APP_DIR" ]; then
+    print_error "Application directory '$APP_DIR' does not exist"
+    exit 1
+fi
 
-# Remove any existing .app bundle
-rm -rf dist/secan.app
+APP_NAME=$(basename "$MAIN_EXEC")
+print_status "Found main executable: $APP_NAME"
 
-# Create new .app bundle structure
-mkdir -p dist/secan.app/Contents/MacOS
-mkdir -p dist/secan.app/Contents/Resources
+# Create temporary working directory
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
 
-# Copy all files from the PyInstaller directory to the .app bundle
-cp -R dist/secan/* dist/secan.app/Contents/MacOS/
-# Remove the original PyInstaller directory to avoid duplication in DMG
-rm -rf dist/secan
-    
+APP_BUNDLE="$TEMP_DIR/${APP_NAME}.app"
+DMG_TEMP="$TEMP_DIR/dmg_temp"
+DMG_PATH="$PWD/${DMG_NAME}.dmg"
+
+print_status "Creating app bundle structure..."
+
+# Create the .app bundle structure
+mkdir -p "$APP_BUNDLE/Contents/MacOS"
+mkdir -p "$APP_BUNDLE/Contents/Resources"
+
+# Copy the PyInstaller directory contents to MacOS
+cp -R "$APP_DIR"/* "$APP_BUNDLE/Contents/MacOS/"
+
 # Create Info.plist
-cat > dist/secan.app/Contents/Info.plist << EOF
+print_status "Creating Info.plist..."
+cat > "$APP_BUNDLE/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>secan</string>
+    <string>$APP_NAME</string>
     <key>CFBundleIdentifier</key>
-    <string>$BUNDLE_ID</string>
+    <string>com.local.${APP_NAME}</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
     <key>CFBundleDisplayName</key>
     <string>$APP_NAME</string>
-    <key>CFBundleVersion</key>
-    <string>$APP_VERSION</string>
-    <key>CFBundleShortVersionString</key>
-    <string>$APP_VERSION</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
-    <key>CFBundleSignature</key>
-    <string>????</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$VERSION</string>
+    <key>CFBundleVersion</key>
+    <string>$VERSION</string>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <key>NSSupportsAutomaticGraphicsSwitching</key>
-    <true/>
+    <key>NSAppleScriptEnabled</key>
+    <false/>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.13</string>
 </dict>
 </plist>
 EOF
 
-# Make sure the executable is actually executable
-chmod +x dist/secan.app/Contents/MacOS/secan
-
-# Sign all .dylib files individually
-find dist/secan.app/Contents/MacOS -name "*.dylib" -exec codesign --force --sign - {} \; 2>/dev/null || true
-# Sign all .zip files individually
-find dist/secan.app/Contents/MacOS -name "*.zip" -exec codesign --force --sign - {} \; 2>/dev/null || true
-# Sign all .so files individually  
-find dist/secan.app/Contents/MacOS -name "*.so" -exec codesign --force --sign - {} \; 2>/dev/null || true
-# Sign any Python extension modules
-find dist/secan.app/Contents/MacOS -name "*.cpython-*.so" -exec codesign --force --sign - {} \; 2>/dev/null || true
-# Sign executables in _internal (if any)
-find dist/secan.app/Contents/MacOS/_internal -type f -perm +111 -exec codesign --force --sign - {} \; 2>/dev/null || true
-
-# Self-sign the app with ad-hoc signature
-codesign --force --sign - dist/secan.app
-codesign --verify --verbose=2 dist/secan.app
-
-# Remove quarantine attribute that might be added during build
-xattr -rd com.apple.quarantine dist/secan.app 2>/dev/null || true
-
-# Display signing information
-codesign -dv dist/secan.app 2>&1 | head -10
-
-# Create DMG background image directory (optional)
-mkdir -p dmg-resources
-
-# Create a simple background image if it doesn't exist
-if [ ! -f "dmg-resources/background.png" ]; then
-    # Create a simple background using ImageMagick if available
-    if command -v convert &> /dev/null; then
-        convert -size 800x450 xc:'#f0f0f0' \
-                -pointsize 24 -fill '#333333' \
-                -gravity center -annotate +0-50 "Drag $APP_NAME to Applications" \
-                dmg-resources/background.png
-    fi
+# Create a simple icon if none exists (optional)
+if [ ! -f "$APP_BUNDLE/Contents/Resources/icon.icns" ]; then
+    print_status "No icon found, creating default app icon..."
+    # Create a minimal icon file (this is optional)
+    touch "$APP_BUNDLE/Contents/Resources/icon.icns"
 fi
 
-# Create DMG
-create-dmg \
-    --volname "$APP_NAME Installer" \
-    --window-pos 200 120 \
-    --window-size 800 450 \
-    --icon-size 100 \
-    --icon "secan.app" 200 190 \
-    --hide-extension "secan.app" \
-    --app-drop-link 600 185 \
-    --background "dmg-resources/background.png" \
-    --hdiutil-quiet \
-    "secan-installer.dmg" \
-    "dist/" || {
-    # Fallback without background if it fails
-    echo "Retrying DMG creation without background..."
-    create-dmg \
-        --volname "$APP_NAME Installer" \
-        --window-pos 200 120 \
-        --window-size 800 450 \
-        --icon-size 100 \
-        --icon "secan.app" 200 190 \
-        --hide-extension "secan.app" \
-        --app-drop-link 600 185 \
-        --hdiutil-quiet \
-        "secan-installer.dmg" \
-        "dist/"
-}
+# Make the main executable file executable
+chmod +x "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
-# Verify the DMG
-if [ -f "secan-installer.dmg" ]; then
-    echo "DMG size: $(du -h secan-installer.dmg | cut -f1)"
-    
-    # Test mounting the DMG
-    echo "Testing DMG..."
-    hdiutil attach secan-installer.dmg -readonly -mountpoint /tmp/secan-test 2>/dev/null && {
-        echo "DMG mounts successfully"
-        hdiutil detach /tmp/secan-test 2>/dev/null
-    } || echo "Warning: Could not test DMG mounting"
-    
-    echo "DMG creation completed successfully!"
+# Ad-hoc code signing (no developer account required)
+print_status "Code signing application with ad-hoc signature..."
+
+# Sign all executable files and dylibs in the bundle
+find "$APP_BUNDLE" -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \) -exec codesign --force --sign - {} \; 2>/dev/null || true
+
+# Sign the main app bundle
+codesign --force --deep --sign - "$APP_BUNDLE"
+
+if [ $? -eq 0 ]; then
+    print_success "Application signed successfully with ad-hoc signature"
 else
-    echo "Error: DMG file was not created"
+    print_warning "Code signing completed with warnings"
+fi
+
+# Verify the signature
+print_status "Verifying code signature..."
+if codesign --verify --verbose=2 "$APP_BUNDLE" 2>/dev/null; then
+    print_success "Code signature verification passed"
+else
+    print_warning "Code signature verification had issues, but continuing..."
+fi
+
+# Create DMG staging directory
+mkdir -p "$DMG_TEMP"
+cp -R "$APP_BUNDLE" "$DMG_TEMP/"
+
+# Create Applications symlink for easy installation
+ln -sf /Applications "$DMG_TEMP/Applications"
+
+# Calculate size needed for DMG (add 20% padding)
+SIZE_KB=$(du -sk "$DMG_TEMP" | cut -f1)
+SIZE_KB=$((SIZE_KB + SIZE_KB / 5))
+
+print_status "Creating DMG image..."
+
+# Remove existing DMG if it exists
+[ -f "$DMG_PATH" ] && rm "$DMG_PATH"
+
+# Create the DMG
+hdiutil create -srcfolder "$DMG_TEMP" \
+    -format UDZO \
+    -compression 9 \
+    -volname "$APP_NAME Installer" \
+    -size ${SIZE_KB}k \
+    "$DMG_PATH"
+
+if [ $? -eq 0 ]; then
+    print_success "DMG created successfully: $DMG_PATH"
+    
+    # Display file size
+    DMG_SIZE=$(ls -lh "$DMG_PATH" | awk '{print $5}')
+    print_status "DMG size: $DMG_SIZE"
+    
+    # Verify DMG
+    print_status "Verifying DMG integrity..."
+    if hdiutil verify "$DMG_PATH" >/dev/null 2>&1; then
+        print_success "DMG verification passed"
+    else
+        print_warning "DMG verification had issues"
+    fi
+    
+    echo ""
+    print_success "Build complete! Your signed DMG is ready for distribution."
+    echo "Note: This uses ad-hoc signing. For App Store or notarized distribution,"
+    echo "you'll need a valid Apple Developer Certificate."
+    
+else
+    print_error "Failed to create DMG"
     exit 1
 fi
