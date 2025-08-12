@@ -148,7 +148,7 @@ ln -sf /Applications "$DMG_TEMP/Applications"
 SIZE_KB=$(du -sk "$DMG_TEMP" | cut -f1)
 SIZE_KB=$((SIZE_KB + SIZE_KB / 5))
 
-print_status "Creating DMG image..."
+echo "Creating DMG image..."
 
 # Remove existing DMG if it exists
 [ -f "$DMG_PATH" ] && rm "$DMG_PATH"
