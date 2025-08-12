@@ -3,7 +3,7 @@
 set -e  # Exit on any error
 
 APP_DIR="dist/secan"
-MAIN_EXEC="dist/secan.app"
+MAIN_EXEC="dist/secan"
 DMG_NAME="secan-installer"
 VERSION="0.1.0"
 
