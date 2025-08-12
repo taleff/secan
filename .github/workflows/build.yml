@@ -53,12 +53,12 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: secan-installer
+        name: windows-secan-installer
         path: secan-installer.exe
     
     - name: Upload macOS DMG
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: secan-installer
+        name: macos-secan-installer
         path: secan-installer.dmg
