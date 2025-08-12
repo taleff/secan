@@ -7,23 +7,23 @@ APP_NAME="Secan"
 APP_VERSION="0.1.0"
 BUNDLE_ID="com.secan.secan"
 
-echo "Creating macOS installer for $APP_NAME..."
-
 # Install create-dmg
-echo "Installing create-dmg..."
 brew install create-dmg
 
-# Create app bundle structure if not exists
-if [ ! -d "dist/secan.app" ]; then
-    echo "Creating .app bundle structure..."
-    mkdir -p dist/secan.app/Contents/MacOS
-    mkdir -p dist/secan.app/Contents/Resources
+# Remove any existing .app bundle
+rm -rf dist/secan.app
+
+# Create new .app bundle structure
+mkdir -p dist/secan.app/Contents/MacOS
+mkdir -p dist/secan.app/Contents/Resources
+
+# Copy all files from the PyInstaller directory to the .app bundle
+cp -R dist/secan/* dist/secan.app/Contents/MacOS/
+# Remove the original PyInstaller directory to avoid duplication in DMG
+rm -rf dist/secan
     
-    # Move executable and resources
-    mv dist/secan/* dist/secan.app/Contents/MacOS/
-    
-    # Create Info.plist
-    cat > dist/secan.app/Contents/Info.plist << EOF
+# Create Info.plist
+cat > dist/secan.app/Contents/Info.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -53,76 +53,18 @@ if [ ! -d "dist/secan.app" ]; then
 </dict>
 </plist>
 EOF
-    
-    echo "App bundle structure created"
-fi
 
-# Code signing section
-echo "Code signing the application..."
+# Make sure the executable is actually executable
+chmod +x dist/secan.app/Contents/MacOS/secan
 
-# Check if we have Apple Developer credentials (for professional signing)
-if [ -n "${APPLE_CERTIFICATE:-}" ] && [ -n "${APPLE_CERTIFICATE_PASSWORD:-}" ]; then
-    echo "Professional code signing with Apple Developer certificate..."
-    
-    # Import certificate
-    echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
-    security create-keychain -p "${APPLE_KEYCHAIN_PASSWORD:-build123}" build.keychain
-    security default-keychain -s build.keychain
-    security unlock-keychain -p "${APPLE_KEYCHAIN_PASSWORD:-build123}" build.keychain
-    security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-    security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${APPLE_KEYCHAIN_PASSWORD:-build123}" build.keychain
-    
-    # Find the certificate identity
-    CERT_IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | head -1 | sed 's/.*) //' | sed 's/ ".*//')
-    
-    if [ -n "$CERT_IDENTITY" ]; then
-        echo "Signing with certificate: $CERT_IDENTITY"
-        codesign --force --deep --options runtime --sign "$CERT_IDENTITY" dist/secan.app
-        
-        # Notarization (if credentials provided)
-        if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_PASSWORD:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then
-            echo "Submitting for notarization..."
-            
-            # Create a zip for notarization
-            ditto -c -k --keepParent dist/secan.app secan-notarization.zip
-            
-            # Submit for notarization
-            xcrun notarytool submit secan-notarization.zip \
-                --apple-id "$APPLE_ID" \
-                --password "$APPLE_PASSWORD" \
-                --team-id "$APPLE_TEAM_ID" \
-                --wait
-            
-            # Staple the notarization
-            xcrun stapler staple dist/secan.app
-            echo "Notarization completed successfully!"
-            
-            # Clean up
-            rm secan-notarization.zip
-        fi
-    else
-        echo "Warning: No valid Developer ID certificate found, falling back to ad-hoc signing"
-        codesign --force --deep --sign - dist/secan.app
-    fi
-    
-    # Clean up certificate
-    rm certificate.p12
-else
-    echo "Ad-hoc code signing (self-signed)..."
-    # Self-sign the app with ad-hoc signature
-    codesign --force --deep --sign - dist/secan.app
-fi
-
-# Verify the signature
-echo "Verifying code signature..."
+# Self-sign the app with ad-hoc signature
+codesign --force --deep --sign - dist/secan.app
 codesign --verify --deep --strict --verbose=2 dist/secan.app
 
 # Remove quarantine attribute that might be added during build
-echo "Removing quarantine attributes..."
 xattr -rd com.apple.quarantine dist/secan.app 2>/dev/null || true
 
 # Display signing information
-echo "Code signing information:"
 codesign -dv dist/secan.app 2>&1 | head -10
 
 # Create DMG background image directory (optional)
@@ -140,7 +82,6 @@ if [ ! -f "dmg-resources/background.png" ]; then
 fi
 
 # Create DMG
-echo "Creating DMG..."
 create-dmg \
     --volname "$APP_NAME Installer" \
     --window-pos 200 120 \
@@ -167,18 +108,6 @@ create-dmg \
         "secan-installer.dmg" \
         "dist/"
 }
-
-# Sign the DMG as well (if we have a certificate)
-if [ -n "${APPLE_CERTIFICATE:-}" ] && [ -n "${APPLE_CERTIFICATE_PASSWORD:-}" ]; then
-    echo "Signing DMG..."
-    CERT_IDENTITY=$(security find-identity -v -p codesigning build.keychain 2>/dev/null | grep "Developer ID Application" | head -1 | sed 's/.*) //' | sed 's/ ".*//') || true
-    if [ -n "$CERT_IDENTITY" ]; then
-        codesign --force --sign "$CERT_IDENTITY" secan-installer.dmg
-        echo "DMG signed successfully"
-    fi
-fi
-
-echo "macOS installer created successfully: secan-installer.dmg"
 
 # Verify the DMG
 if [ -f "secan-installer.dmg" ]; then
