@@ -14,7 +14,6 @@ if [ ! -d "$APP_DIR" ]; then
 fi
 
 APP_NAME=$(basename "$MAIN_EXEC")
-print_status "Found main executable: $APP_NAME"
 
 # Create temporary working directory
 TEMP_DIR=$(mktemp -d)
