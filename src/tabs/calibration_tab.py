@@ -34,6 +34,9 @@ class CalibrationTab(QtWidgets.QWidget):
         )
         self.select_calib_method_combo.currentTextChanged.connect(self.combo_changed)
 
+        # The date upon which the calibration was updated
+        self.date_box = QtWidgets.QLabel()
+
         # Updating the form to have the initial value
         self.combo_changed(self.select_calib_method_combo.currentText())
 
@@ -46,6 +49,7 @@ class CalibrationTab(QtWidgets.QWidget):
         layout.addWidget(self.calib_eqn_label)
         self.calib_eqn_label.setContentsMargins(0, 10, 0, 30)
         layout.addLayout(self.calib_input_form)
+        layout.addWidget(self.date_box)
         layout.addStretch()
 
     @QtCore.Slot()

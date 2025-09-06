@@ -5,7 +5,7 @@ from view.main_window import Secan
 
 def main():
     # Create QApplication instance
-    app = QtWidgets.QApplication([])
+    app = QApplication(sys.argv)
     
     # Set application properties
     app.setApplicationName("Secan")

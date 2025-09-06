@@ -29,19 +29,17 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onedir --windowed --name=secan src/main.py
+        pyinstaller --onedir --windowed --name=secan src/main.py --icon resources/secan_icon.icns
 
     - name: Create Windows Installer
       if: matrix.os == 'windows-latest'
       run: |
-        chmod +x build/windows_installer.ps1
         powershell -ExecutionPolicy Bypass -File build/windows_installer.ps1
 
     - name: Create MacOS DMG
       if: matrix.os == 'macos-latest'
       run: |
         brew install create-dmg
-        chmod +x build/macos_installer.sh
         bash build/macos_installer.sh
       
     - name: Upload artifacts
