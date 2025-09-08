@@ -39,7 +39,6 @@ jobs:
     - name: Create MacOS DMG
       if: matrix.os == 'macos-latest'
       run: |
-        xcode-select --install
         brew install create-dmg
         bash build/macos_installer.sh
       
