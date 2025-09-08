@@ -13,6 +13,7 @@ create-dmg \
   --icon "secan.app" 175 120 \
   --hide-extension "secan.app" \
   --app-drop-link 425 120 \
+  --codesign -
   "secan-installer.dmg" \
   "dist/dmg/"
 
