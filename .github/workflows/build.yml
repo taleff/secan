@@ -30,7 +30,6 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir --windowed --name=secan src/main.py --icon resources/secan_icon.icns
-	codesign --force -deep -s dist/secan.app
 
     - name: Create Windows Installer
       if: matrix.os == 'windows-latest'
