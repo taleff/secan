@@ -1,7 +1,5 @@
 #!/bin/macos_installer.sh
 
-codesign --force -deep -s dist/secan.app
-
 mkdir -p dist/dmg
 rm -r dist/dmg/*
 cp -r "dist/secan.app" dist/dmg

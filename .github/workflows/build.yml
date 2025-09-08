@@ -30,6 +30,7 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pyinstaller --onedir --windowed --name=secan src/main.py --icon resources/secan_icon.icns
+	codesign --force -deep -s dist/secan.app
 
     - name: Create Windows Installer
       if: matrix.os == 'windows-latest'
@@ -61,7 +62,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-app
-        path: dist/secan.app
+        path: dist/
 
     - name: Upload Ubuntu Files
       if: matrix.os == 'ubuntu-latest'
