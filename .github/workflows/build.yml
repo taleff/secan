@@ -56,6 +56,13 @@ jobs:
         name: ${{ matrix.os }}-installer
         path: secan-installer.dmg
 
+    - name: Upload macOS App
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-app
+        path: dist/secan.app
+
     - name: Upload Ubuntu Files
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
