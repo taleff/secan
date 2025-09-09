@@ -1,4 +1,5 @@
 #!/bin/macos_installer.sh
+codesign --verify --deep --strict --verbose=2 dist/Secan.app
 
 mkdir -p dist/dmg
 rm -r dist/dmg/*
