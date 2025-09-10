@@ -451,6 +451,10 @@ class Secan(QtWidgets.QMainWindow):
     def read_settings(self, default=False):
         # Creating a settings object
         settings = self._get_settings_object()
+
+        test = QtWidgets.QMessageBox.information(
+            self, 'Settings Location', settings.fileName()
+        )
         
         # Reading all of the axes options used to generate the graph
         settings.beginGroup('Axes')
