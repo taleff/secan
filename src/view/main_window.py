@@ -451,16 +451,15 @@ class Secan(QtWidgets.QMainWindow):
     def read_settings(self, default=False):
         # Creating a settings object
         settings = self._get_settings_object()
-
-        test = QtWidgets.QMessageBox.information(
-            self, 'Settings Location', settings.fileName()
-        )
         
         # Reading all of the axes options used to generate the graph
         settings.beginGroup('Axes')
         self.axes_options = AxesDialog().reset_to_default() 
         for setting in self.axes_options.keys():
-            value = settings.value(setting)
+            try:
+                value = float(settings.value(setting))
+            except:
+                value = settings.value(setting)
             if value is not None:
                 self.axes_options[setting] = value  
         settings.endGroup()
@@ -469,7 +468,10 @@ class Secan(QtWidgets.QMainWindow):
         settings.beginGroup('Trace')
         self.trace_options = TracesDialog().reset_to_default() 
         for setting in self.trace_options.keys():
-            value = settings.value(setting)
+            try:
+                value = float(settings.value(setting))
+            except:
+                value = settings.value(setting)
             if value is not None:
                 self.trace_options[setting] = value
         settings.endGroup()
