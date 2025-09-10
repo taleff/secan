@@ -45,7 +45,7 @@ VIAddVersionKey "FileVersion" "$AppVersion"
 
 Section "Install"
     SetOutPath "`$INSTDIR"
-    File /r "dist\secan\*"
+    File /r "dist\main\*"
     
     # Create desktop shortcut
     CreateShortCut "`$DESKTOP\`${APP_NAME}.lnk" "`$INSTDIR\`${APP_EXE}"
