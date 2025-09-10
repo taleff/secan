@@ -1,14 +1,13 @@
 # build/windows_installer.ps1
 
+dir dist
+
 param(
     [string]$AppName = "Secan",
     [string]$AppVersion = "0.1.0", 
     [string]$Publisher = "Secan",
     [string]$AppExe = "secan.exe"
 )
-
-# Install NSIS
-choco install nsis -y
 
 # Create NSIS script content
 $nsisScript = @"
