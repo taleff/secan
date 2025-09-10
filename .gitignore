@@ -6,7 +6,6 @@ dist/
 
 # PyInstaller
 *.manifest
-*.spec
 
 # Virtual Environment
 venv/
